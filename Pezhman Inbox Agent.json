@@ -1,0 +1,491 @@
+{
+  "name": "Pezhman Inbox Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -128,
+        32
+      ],
+      "id": "7303a2da-db0e-44c3-8db3-9500b2a99b33",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nMkYfejsTcscuh9u",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "=subject: {{ $json.headers.subject }}\n\nbody: {{ $json.text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "customer support",
+              "description": "Emails requesting help, troubleshooting, or guidance for a product or service. Usually describe issues like login errors, bugs, or malfunctioning features. Common keywords: error, issue, problem, help, access, support, fix, reset, troubleshoot."
+            },
+            {
+              "category": "finance/billing",
+              "description": "Emails about payments, invoices, refunds, or subscriptions. The sender wants to confirm, dispute, or update financial details. Common keywords: invoice, payment, refund, billing, charge, subscription, renewal, receipt."
+            },
+            {
+              "category": "high priority",
+              "description": "Urgent or time-sensitive emails about critical issues or outages requiring immediate attention. Common keywords: urgent, ASAP, critical, outage, down, immediate, emergency, escalation."
+            },
+            {
+              "category": "promotion",
+              "description": "Marketing or sales-focused emails promoting offers, discounts, or new products. Tone is upbeat and persuasive. Common keywords: sale, offer, discount, promotion, new feature, upgrade, limited time, exclusive."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        0
+      ],
+      "id": "9b724771-4a3b-4fc0-85c3-e10f80b07017",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_211891792316692432"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        -304
+      ],
+      "id": "93507757-b802-4f62-afcf-9a09b3ded33e",
+      "name": "Add label to message",
+      "webhookId": "c2183fba-0992-48a0-abd5-f7a89d08efd8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nMkYfejsTcscuh9u",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=subject:{{ $('Gmail Trigger').item.json.subject }}\n\nbody:{{ $('Gmail Trigger').item.json.text }}",
+        "options": {
+          "systemMessage": "=You are Pej's AI Assistant — an expert, friendly, and professional customer support representative for AI Automation Society.\n\nYour role:\n\nRespond clearly, concisely, and helpfully to member questions.\n\nAlways maintain a warm and approachable tone that reflects Nate Herk’s brand and community values.\n\nProvide accurate information about AI Automation Society, its programs, challenges, and community rules.\n\nIf you do not know the answer or the query requires Nate’s direct input, politely tell the user to reach out to pejman93@gmail.com\n.\n\nAlways sign off every message with:\n- Nate’s AI Assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        736,
+        -400
+      ],
+      "id": "cd0384a2-9edf-4606-9b19-6f8c0479c30b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        128,
+        304
+      ],
+      "id": "6fdfbf44-6210-444e-b2a9-a69df38130c7",
+      "name": "GPT-4.1-mini",
+      "credentials": {
+        "openRouterApi": {
+          "id": "rgzZ67UQT4ASWVKQ",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.5-sonnet",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        -64
+      ],
+      "id": "9598bbf1-43c9-4748-bee5-98c59573731f",
+      "name": "claude-3.5-sonnet",
+      "credentials": {
+        "openRouterApi": {
+          "id": "rgzZ67UQT4ASWVKQ",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -400
+      ],
+      "id": "960a6423-faa1-4e3f-864f-a691cbe765a2",
+      "name": "Reply to a message",
+      "webhookId": "2647f7e0-7418-4cff-871b-f629f14d6523",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nMkYfejsTcscuh9u",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_2746612062780078714"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        -128
+      ],
+      "id": "7719e1ce-4e4a-4c10-a5f7-c30fe9e54723",
+      "name": "Add label to message1",
+      "webhookId": "c2183fba-0992-48a0-abd5-f7a89d08efd8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nMkYfejsTcscuh9u",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09ULSS23RP",
+          "mode": "list",
+          "cachedResultName": "tests"
+        },
+        "text": "=New billing from {{ $('Gmail Trigger').item.json.to.value[0].name }}\n\nHey billing team,\nwe received a new billig info at {{ $now.format('yyyy-MM-dd hh:mm a') }}.\n\nit is from {{ $('Gmail Trigger').item.json.to.value[0].name }}.\n\nyou can email them at {{ $('Gmail Trigger').item.json.from.value[0].address }}\n\nthis is the subject of the email:\n{{ $('Gmail Trigger').item.json.headers.subject }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        784,
+        -128
+      ],
+      "id": "b8fd05ce-b0ec-4cf1-867d-fab44584eb6b",
+      "name": "Send a message",
+      "webhookId": "30f91115-20ed-4ee0-b343-8b9abf78891a",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "cVWmykur6PeiXpEH",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_535847706130243852"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        64
+      ],
+      "id": "cd2f8f80-ccd6-4621-b2a2-1dc4a9bc765e",
+      "name": "Add label to message2",
+      "webhookId": "c2183fba-0992-48a0-abd5-f7a89d08efd8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nMkYfejsTcscuh9u",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_4379906364305182870"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        288
+      ],
+      "id": "3f704b3f-d83a-4f45-93bf-968a469d242a",
+      "name": "Add label to message3",
+      "webhookId": "c2183fba-0992-48a0-abd5-f7a89d08efd8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nMkYfejsTcscuh9u",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=subject: {{ $('Gmail Trigger').item.json.headers.subject }}\n\nbody: {{ $('Gmail Trigger').item.json.text }}\n\n",
+        "options": {
+          "systemMessage": "You are Pej’s AI Assistant — an expert, friendly, and professional customer support representative for AI Automation Society.\n\nYour role:\n\nRespond clearly, concisely, and helpfully to member questions.\n\nAlways maintain a warm and approachable tone that reflects Nate Herk’s brand and community values.\n\nProvide accurate information about AI Automation Society, its programs, challenges, and community rules.\n\nIf you do not know the answer or the query requires Nate’s direct input, politely tell the user to reach out to pejman93@gmail.com\n.\n\nAlways sign off every message with:\n- Pej's AI Assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        768,
+        128
+      ],
+      "id": "95bcf33f-c495-46a7-9f86-f14bf38880a6",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "hey",
+        "message": "={{ $json.output }}",
+        "options": {
+          "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+          "sendTo": "={{ $('Gmail Trigger').item.json.from.value[0].address }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        128
+      ],
+      "id": "b6ac19e1-d462-49b9-9936-dac4e40140f4",
+      "name": "Create a draft",
+      "webhookId": "24aee988-65bf-42f8-9289-0ca3daa59879",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nMkYfejsTcscuh9u",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        368
+      ],
+      "id": "3557641e-2ee6-4c57-9be8-3afbf1c881eb",
+      "name": "Mark a message as read",
+      "webhookId": "7232a9ec-6e49-4c1b-a724-d8fe7a8c1cb3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "nMkYfejsTcscuh9u",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label to message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label to message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label to message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4.1-mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "claude-3.5-sonnet": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message3": {
+      "main": [
+        [
+          {
+            "node": "Mark a message as read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "54b8eea0-1149-49c6-af3f-be099c481d27",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "411e6c815db30bac07cfe7be93d8ffe5d1f8c1d15b51951fca8ec782863a45d4"
+  },
+  "id": "b0eeoh5raVWea5b7FOLk7",
+  "tags": []
+}
